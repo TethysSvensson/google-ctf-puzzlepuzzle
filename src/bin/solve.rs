@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use clap::Parser;
 use tools::{
     ACTIVE, CachedGroups, Map, NOT_ACTIVE, Shape, ShapeDb, ShapeDbIndex, ShapeId, Solution,
-    UNPROCESSED, find_group, normalize_group, read_cached_groups, read_shape_db, show_shape,
+    UNPROCESSED, find_group, normalize_group, read_cached_groups, read_shape_db,
     write_cached_groups, write_map, write_shape_db,
 };
 
@@ -121,7 +121,7 @@ fn main() {
             shape_len_before,
             shape_db.len()
         );
-        write_shape_db(shape_db);
+        write_shape_db(&shape_db);
     }
     write_cached_groups(&cached_groups);
     write_map(&map);

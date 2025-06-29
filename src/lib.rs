@@ -174,7 +174,7 @@ pub fn read_cached_groups() -> CachedGroups {
     }
 }
 
-pub fn write_shape_db(shape_db: Vec<Shape>) {
+pub fn write_shape_db(shape_db: &[Shape]) {
     std::fs::write("shape_db.json", serde_json::to_string(&shape_db).unwrap()).unwrap();
     println!("Written to shape_db.json");
 }
@@ -188,9 +188,25 @@ pub fn write_cached_groups(cached_groups: &CachedGroups) {
     println!("Written to cached_groups.bin");
 }
 
+pub fn write_cached_groups_named(cached_groups: &CachedGroups, name: &str) {
+    std::fs::write(
+        name,
+        serde_cbor::to_vec(cached_groups).expect("Failed to serialize cached groups"),
+    )
+    .expect("Failed to write {name}");
+    println!("Written cache group to {name}");
+}
+
 pub fn write_map(map: &Map) {
     let map: &[[u8; W]; H] = map;
     let map: &[u8; W * H] = unsafe { core::mem::transmute(map) };
     std::fs::write("puzzlepuzzle.raw", map).expect("Failed to  write puzzlepuzzle.raw");
     println!("Written to puzzlepuzzle.raw");
+}
+
+pub fn write_map_named(map: &Map, name: &str) {
+    let map: &[[u8; W]; H] = map;
+    let map: &[u8; W * H] = unsafe { core::mem::transmute(map) };
+    std::fs::write(&name, map).expect("Failed to  write puzzlepuzzle.raw");
+    println!("Written to map to {name}");
 }

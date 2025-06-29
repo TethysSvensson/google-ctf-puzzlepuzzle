@@ -66,7 +66,7 @@ fn main() {
         .starts_with('y');
 
     if is_correct {
-        write_shape_db(shape_db);
+        write_shape_db(&shape_db);
     }
 }
 
