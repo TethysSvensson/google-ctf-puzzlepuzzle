@@ -1,6 +1,5 @@
 use std::{
     collections::{HashMap, HashSet},
-    num::NonZero,
     sync::Mutex,
 };
 
@@ -38,7 +37,9 @@ fn main() {
         .into_iter()
         .map(|group| tools::Shape {
             group,
-            solutions: None, // Solutions can be added later
+            solutions: None,      // Solutions can be added later
+            parent: None,         // No parent for these initial shapes
+            used_solutions: None, // No solutions applied yet
         })
         .collect();
 

@@ -1,5 +1,5 @@
 use clap::Parser;
-use tools::{H, Map, W, read_map, show_at};
+use tools::{read_map, show_at};
 
 #[derive(clap::Parser)]
 struct Args {

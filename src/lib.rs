@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 pub const W: usize = 17268;
 pub const H: usize = 90300;
@@ -59,7 +59,7 @@ pub fn show_at(map: &Map, gx: usize, gy: usize, size: usize) {
             let tile = map[y][x];
             if x == gx && y == gy {
                 // Highlight the center tile
-                print!("\x1b[1;31m"); // Red bold for the center
+                print!("\x1b[31;1m"); // Red bold for the center
             }
             match tile {
                 0 => print!(" "),
@@ -67,6 +67,8 @@ pub fn show_at(map: &Map, gx: usize, gy: usize, size: usize) {
                 2 => print!("1"),
                 3 => print!("2"),
                 5 => print!("#"),
+                6 => print!("\x1b[37;2m.\x1b[0m"),
+                7 => print!("\x1b[33;1m#\x1b[0m"),
                 10 => print!("?"),
                 _ => panic!("Unexpected tile value: {tile}"),
             }
@@ -81,12 +83,19 @@ pub fn show_at(map: &Map, gx: usize, gy: usize, size: usize) {
 
 pub const SHAPE_ALPHABET: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+pub type ShapeDbIndex = HashMap<(Vec<(usize, usize)>, Option<ShapeId>), ShapeId>;
+pub type CachedGroups = HashMap<(usize, usize), ((usize, usize), ShapeId)>;
 pub type ShapeDb = Vec<Shape>;
+pub type ShapeId = usize;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Shape {
     pub group: Vec<(usize, usize)>,
     pub solutions: Option<Vec<Solution>>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub parent: Option<ShapeId>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub used_solutions: Option<Vec<usize>>,
 }
 
 pub type Solution = Vec<(usize, usize)>;
@@ -132,4 +141,52 @@ pub fn show_shape(shape: &Shape) {
         }
         println!();
     }
+
+    if let Some(parent) = shape.parent {
+        println!("Parent shape ID: {}", parent);
+    } else {
+        println!("No parent shape");
+    }
+    if let Some(used_solutions) = &shape.used_solutions {
+        println!("Used solutions: {:?}", used_solutions);
+    }
+}
+
+pub fn read_shape_db() -> ShapeDb {
+    serde_json::from_str::<ShapeDb>(
+        &std::fs::read_to_string("shape_db.json").expect("Failed to read shape_db.json"),
+    )
+    .unwrap()
+}
+
+pub fn read_cached_groups() -> CachedGroups {
+    if std::fs::exists("cached_groups.bin").unwrap() {
+        serde_cbor::from_slice(
+            &std::fs::read("cached_groups.bin").expect("Failed to read cached_groups.json"),
+        )
+        .unwrap()
+    } else {
+        Default::default()
+    }
+}
+
+pub fn write_shape_db(shape_db: Vec<Shape>) {
+    std::fs::write("shape_db.json", serde_json::to_string(&shape_db).unwrap()).unwrap();
+    println!("Written to shape_db.json");
+}
+
+pub fn write_cached_groups(cached_groups: &CachedGroups) {
+    std::fs::write(
+        "cached_groups.bin",
+        serde_cbor::to_vec(cached_groups).expect("Failed to serialize cached groups"),
+    )
+    .expect("Failed to write cached_groups.bin");
+    println!("Written to cached_groups.bin");
+}
+
+pub fn write_map(map: &Map) {
+    let map: &[[u8; W]; H] = map;
+    let map: &[u8; W * H] = unsafe { core::mem::transmute(map) };
+    std::fs::write("puzzlepuzzle.raw", map).expect("Failed to  write puzzlepuzzle.raw");
+    println!("Written to puzzlepuzzle.raw");
 }

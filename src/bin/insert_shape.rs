@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use clap::Parser;
-use tools::{SHAPE_ALPHABET, Shape, Solution, show_shape};
+use tools::{SHAPE_ALPHABET, Shape, Solution, read_shape_db, show_shape, write_shape_db};
 
 #[derive(clap::Parser)]
 struct Args {
@@ -12,10 +12,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let shape_id = args.shape_id;
-    let mut shape_db: tools::ShapeDb = serde_json::from_str(
-        &std::fs::read_to_string("shape_db.json").expect("Failed to read shape_db.json"),
-    )
-    .expect("Failed to parse shape_db.json");
+    let mut shape_db: tools::ShapeDb = read_shape_db();
 
     if shape_id >= shape_db.len() {
         eprintln!(
@@ -69,8 +66,7 @@ fn main() {
         .starts_with('y');
 
     if is_correct {
-        std::fs::write("shape_db.json", serde_json::to_string(&shape_db).unwrap()).unwrap();
-        println!("Written to shape_db.json");
+        write_shape_db(shape_db);
     }
 }
 

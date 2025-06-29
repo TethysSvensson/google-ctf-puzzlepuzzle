@@ -1,7 +1,5 @@
-use core::arch;
-
 use clap::Parser;
-use tools::{SHAPE_ALPHABET, show_shape};
+use tools::{read_shape_db, show_shape};
 
 #[derive(clap::Parser)]
 struct Args {
@@ -11,10 +9,7 @@ struct Args {
 pub fn main() {
     let args = Args::parse();
     let shape_id = args.shape_id;
-    let shape_db: tools::ShapeDb = serde_json::from_str(
-        &std::fs::read_to_string("shape_db.json").expect("Failed to read shape_db.json"),
-    )
-    .expect("Failed to parse shape_db.json");
+    let shape_db = read_shape_db();
 
     let shape_id = if let Some(shape_id) = shape_id {
         shape_id

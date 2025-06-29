@@ -4,7 +4,7 @@ use std::{
 };
 
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use tools::{H, Map, W, normalize_group, read_map, show_at};
+use tools::{H, Map, W, normalize_group, read_map};
 
 fn main() {
     let map = read_map();
