@@ -2,27 +2,27 @@ use clap::Parser;
 use image::{ImageBuffer, ImageFormat, Rgb};
 use std::fs::File;
 use std::io::BufWriter;
-use tools::read_map;
+use tools::{H, W, read_map};
 
 #[derive(clap::Parser)]
 struct Args {
-    x: usize,
-    y: usize,
-    w: u32,
-    h: u32,
+    x1: u32,
+    x2: u32,
+    y1: u32,
+    y2: u32,
 }
 
 fn main() {
     let args = Args::parse();
-    // Load the shape database
     let map = read_map();
 
-    let mut img = ImageBuffer::<Rgb<u8>, _>::new(args.w, args.h);
+    let width = (args.x2 - args.x1).min(W as u32 - args.x1);
+    let height = (args.y2 - args.y1).min(H as u32 - args.y1);
 
-    // Fill the image with white color
+    let mut img = ImageBuffer::<Rgb<u8>, _>::new(width, height);
 
     for (x, y, pixel) in img.enumerate_pixels_mut() {
-        *pixel = match map[args.y + y as usize][args.x + x as usize] {
+        *pixel = match map[(args.y1 + y) as usize][(args.x1 + x) as usize] {
             0 => Rgb([0, 0, 0]),
             1 => Rgb([255, 0, 0]),
             2 => Rgb([255, 255, 0]),
