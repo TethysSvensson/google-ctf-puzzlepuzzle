@@ -2,6 +2,7 @@
 cargo run --release --bin dat2raw
 git checkout shape_db.json
 rm -f cached_groups.bin
+cargo run --release --bin fix_bits
 cargo run --release --bin solve 2214..6611,83639 --step-x 24
 cargo run --release --bin solve 6625,83718..90500 --step-y 12
 cargo run --release --bin solve 6..6650,90290 --step-x 12
