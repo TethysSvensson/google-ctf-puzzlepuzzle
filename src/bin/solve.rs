@@ -78,7 +78,9 @@ fn main() {
             &mut cached_groups,
             min_x,
             min_y,
-        ) {
+        )
+        .unwrap()
+        {
             solved_count += 1;
             if solved_count % 10000 == 0 {
                 println!("Solved {} tiles, todo.len == {}", solved_count, todo.len());
@@ -151,6 +153,17 @@ fn get_group(
 
 type Patch = ((usize, usize), u8);
 
+#[derive(Debug)]
+struct InconsistentError;
+
+impl std::fmt::Display for InconsistentError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Inconsistent state detected")
+    }
+}
+
+impl std::error::Error for InconsistentError {}
+
 fn has_locally_unique_solution(
     map: &Map,
     shape_id: ShapeId,
@@ -160,10 +173,13 @@ fn has_locally_unique_solution(
     cached_groups: &mut CachedGroups,
     min_x: usize,
     min_y: usize,
-) -> Option<Vec<Patch>> {
+) -> Result<Option<Vec<Patch>>, InconsistentError> {
     let mut found_patches: Option<Vec<((usize, usize), u8)>> = None;
     let mut used_solutions = Vec::new();
-    for (solution_id, solution) in shape.solutions.as_ref()?.iter().enumerate() {
+    let Some(solutions) = &shape.solutions else {
+        return Ok(None); // No solutions available for this shape
+    };
+    for (solution_id, solution) in solutions.iter().enumerate() {
         if let Some(cur_patches) = find_solution_valid_at(map, shape, solution, min_x, min_y) {
             if let Some(found_patches) = &mut found_patches {
                 found_patches.retain(|kv| cur_patches.contains(kv));
@@ -173,9 +189,11 @@ fn has_locally_unique_solution(
             used_solutions.push(solution_id);
         }
     }
-    let found_patches = found_patches.expect("This is an inconsistent puzzle");
+    let Some(found_patches) = found_patches else {
+        return Err(InconsistentError);
+    };
     if found_patches.is_empty() {
-        None
+        Ok(None)
     } else {
         let mut not_patched = shape
             .group
@@ -220,7 +238,7 @@ fn has_locally_unique_solution(
                 }
             }
         }
-        Some(found_patches.into_iter().collect())
+        Ok(Some(found_patches.into_iter().collect()))
     }
 }
 
