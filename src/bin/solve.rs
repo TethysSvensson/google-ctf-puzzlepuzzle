@@ -10,6 +10,10 @@ use tools::{
 #[derive(clap::Parser)]
 struct Args {
     positions: Vec<String>,
+    #[clap(long, default_value = "1")]
+    step_x: usize,
+    #[clap(long, default_value = "1")]
+    step_y: usize,
 }
 
 fn main() {
@@ -24,14 +28,32 @@ fn main() {
     let mut cached_groups = read_cached_groups();
 
     let mut map = tools::read_map();
-    let mut todo: Vec<(usize, usize)> = args
-        .positions
-        .iter()
-        .map(|arg| {
-            let (x, y) = arg.split_once(",").unwrap();
-            (x.parse().unwrap(), y.parse().unwrap())
-        })
-        .collect();
+    let mut todo: Vec<(usize, usize)> = Vec::new();
+    for position in args.positions {
+        let (x, y) = position.split_once(",").unwrap();
+        let (x0, x1) = if let Some((x0, x1)) = x.split_once("..") {
+            (x0, x1)
+        } else {
+            (x, x)
+        };
+        let (y0, y1) = if let Some((y0, y1)) = y.split_once("..") {
+            (y0, y1)
+        } else {
+            (y, y)
+        };
+
+        let x0 = x0.parse().unwrap();
+        let x1 = x1.parse().unwrap();
+        let y0 = y0.parse().unwrap();
+        let y1 = y1.parse().unwrap();
+        for x in (x0..=x1).step_by(args.step_x) {
+            for y in (y0..=y1).step_by(args.step_y) {
+                if x < tools::W && y < tools::H {
+                    todo.push((x, y));
+                }
+            }
+        }
+    }
 
     let mut solved_count = 0;
     let shape_len_before = shape_db.len();
@@ -58,23 +80,31 @@ fn main() {
             min_y,
         ) {
             solved_count += 1;
+            if solved_count % 10000 == 0 {
+                println!("Solved {} tiles, todo.len == {}", solved_count, todo.len());
+                println!("Solving at ({}, {})", x, y);
+            }
             for &((x, y), value) in &unique_solution {
+                let old_value = map[y][x];
                 map[y][x] = value;
 
-                for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
-                    let nx = x.wrapping_add_signed(*dx);
-                    let ny = y.wrapping_add_signed(*dy);
-                    if let Some(potential_number) = map.get_mut(ny).and_then(|row| row.get_mut(nx))
-                    {
-                        if 1 <= *potential_number && *potential_number <= 3 {
-                            if value == ACTIVE {
-                                assert!(*potential_number > 1);
-                                *potential_number -= 1; // Decrease the neighbor tile count
-                            }
-                            for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
-                                let nx = nx.wrapping_add_signed(*dx);
-                                let ny = ny.wrapping_add_signed(*dy);
-                                todo.push((nx, ny));
+                if old_value != value {
+                    for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
+                        let nx = x.wrapping_add_signed(*dx);
+                        let ny = y.wrapping_add_signed(*dy);
+                        if let Some(potential_number) =
+                            map.get_mut(ny).and_then(|row| row.get_mut(nx))
+                        {
+                            if 1 <= *potential_number && *potential_number <= 3 {
+                                if value == ACTIVE {
+                                    assert!(*potential_number > 1);
+                                    *potential_number -= 1; // Decrease the neighbor tile count
+                                }
+                                for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
+                                    let nx = nx.wrapping_add_signed(*dx);
+                                    let ny = ny.wrapping_add_signed(*dy);
+                                    todo.push((nx, ny));
+                                }
                             }
                         }
                     }
@@ -143,7 +173,7 @@ fn has_locally_unique_solution(
             used_solutions.push(solution_id);
         }
     }
-    let found_patches = found_patches?;
+    let found_patches = found_patches.expect("This is an inconsistent puzzle");
     if found_patches.is_empty() {
         None
     } else {
