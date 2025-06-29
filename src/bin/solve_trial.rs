@@ -45,6 +45,7 @@ fn main() {
         &mut shape_db,
         &mut shape_db_index,
     );
+    write_shape_db(&shape_db);
 }
 
 #[derive(Clone)]
@@ -94,7 +95,6 @@ fn breadth_first_solver(
             let mut real_map = real_map.clone();
             map.apply(&mut real_map);
             write_map_named(&real_map, &format!("solution_{count}.raw"));
-            write_shape_db(shape_db);
             write_cached_groups_named(&cached_groups, &format!("cached_groups_{count}.bin"));
             count += 1;
 
