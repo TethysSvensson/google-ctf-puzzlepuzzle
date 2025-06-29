@@ -15,5 +15,5 @@ cargo run --release --bin solve 8418..17257,8855 --step-x 24
 cargo run --release --bin solve 17245,8934..22200 --step-y 12
 
 # Gen image
-# cargo run --release --bin gen_image 0 100000 0 100000
-#gimp output_image.png &
+cargo run --release --bin gen_image 0 100000 0 100000
+gimp output_image.png &
