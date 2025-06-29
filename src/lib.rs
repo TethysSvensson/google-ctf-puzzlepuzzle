@@ -53,6 +53,10 @@ pub fn normalize_group(group: &[(usize, usize)]) -> (usize, usize, Vec<(usize, u
     (min_x, min_y, normalized)
 }
 
+pub const UNPROCESSED: u8 = 5;
+pub const NOT_ACTIVE: u8 = 6;
+pub const ACTIVE: u8 = 7;
+
 pub fn show_at(map: &Map, gx: usize, gy: usize, size: usize) {
     for y in gy.saturating_sub(size)..gy.saturating_add(size).min(H) {
         for x in gx.saturating_sub(size)..gx.saturating_add(size).min(W) {
@@ -66,9 +70,9 @@ pub fn show_at(map: &Map, gx: usize, gy: usize, size: usize) {
                 1 => print!("0"),
                 2 => print!("1"),
                 3 => print!("2"),
-                5 => print!("#"),
-                6 => print!("\x1b[37;2m.\x1b[0m"),
-                7 => print!("\x1b[33;1m#\x1b[0m"),
+                UNPROCESSED => print!("#"),
+                NOT_ACTIVE => print!("\x1b[37;2m.\x1b[0m"),
+                ACTIVE => print!("\x1b[33;1m#\x1b[0m"),
                 10 => print!("?"),
                 _ => panic!("Unexpected tile value: {tile}"),
             }

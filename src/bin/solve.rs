@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use clap::Parser;
 use tools::{
-    CachedGroups, Map, Shape, ShapeDb, ShapeDbIndex, ShapeId, Solution, find_group,
-    normalize_group, read_cached_groups, read_shape_db, show_shape, write_cached_groups, write_map,
-    write_shape_db,
+    ACTIVE, CachedGroups, Map, NOT_ACTIVE, Shape, ShapeDb, ShapeDbIndex, ShapeId, Solution,
+    UNPROCESSED, find_group, normalize_group, read_cached_groups, read_shape_db, show_shape,
+    write_cached_groups, write_map, write_shape_db,
 };
 
 #[derive(clap::Parser)]
@@ -37,7 +37,10 @@ fn main() {
     let shape_len_before = shape_db.len();
 
     while let Some((x, y)) = todo.pop() {
-        if map[y][x] != 5 {
+        if x >= tools::W || y >= tools::H {
+            continue;
+        }
+        if map[y][x] != UNPROCESSED {
             continue; // Only process empty tiles
         }
 
@@ -57,16 +60,22 @@ fn main() {
             solved_count += 1;
             for &((x, y), value) in &unique_solution {
                 map[y][x] = value;
-            }
 
-            for ((x, y), value) in unique_solution {
-                if 1 <= value && value <= 3 {
-                    // If the tile is a neighbor, add it to the todo list
-                    for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
-                        let nx = x.wrapping_add_signed(*dx);
-                        let ny = y.wrapping_add_signed(*dy);
-                        if map.get(ny).and_then(|row| row.get(nx)) == Some(&5) {
-                            todo.push((nx, ny));
+                for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
+                    let nx = x.wrapping_add_signed(*dx);
+                    let ny = y.wrapping_add_signed(*dy);
+                    if let Some(potential_number) = map.get_mut(ny).and_then(|row| row.get_mut(nx))
+                    {
+                        if 1 <= *potential_number && *potential_number <= 3 {
+                            if value == ACTIVE {
+                                assert!(*potential_number > 1);
+                                *potential_number -= 1; // Decrease the neighbor tile count
+                            }
+                            for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
+                                let nx = nx.wrapping_add_signed(*dx);
+                                let ny = ny.wrapping_add_signed(*dy);
+                                todo.push((nx, ny));
+                            }
                         }
                     }
                 }
@@ -155,9 +164,6 @@ fn has_locally_unique_solution(
             })
             .collect::<Vec<_>>();
         if !not_patched.is_empty() {
-            show_shape(shape);
-            println!("Found patches: {:?}", found_patches);
-            println!("Not patched: {:?}", not_patched);
             not_patched.sort_unstable();
             let key = (not_patched, Some(shape_id));
             if let Some(shape_id) = shape_db_index.get(&key) {
@@ -218,9 +224,9 @@ fn find_solution_valid_at(
             }
         }
         if solution.contains(&(x, y)) {
-            patches.push(((actual_x, actual_y), 7));
+            patches.push(((actual_x, actual_y), ACTIVE));
         } else {
-            patches.push(((actual_x, actual_y), 6));
+            patches.push(((actual_x, actual_y), NOT_ACTIVE));
         }
     }
 
@@ -230,12 +236,13 @@ fn find_solution_valid_at(
             return None;
         }
         let other_tiles_needed = tile - 1 - change;
-        patches.push((*neighbor, tile - change));
         let mut other_tiles_available = 0;
         for (dx, dy) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
             let nx = neighbor.0.wrapping_add_signed(*dx);
             let ny = neighbor.1.wrapping_add_signed(*dy);
-            if !us.contains(&(nx, ny)) && map.get(ny).and_then(|row| row.get(nx)) == Some(&5) {
+            if !us.contains(&(nx, ny))
+                && map.get(ny).and_then(|row| row.get(nx)) == Some(&UNPROCESSED)
+            {
                 other_tiles_available += 1;
             }
         }
