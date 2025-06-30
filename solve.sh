@@ -41,4 +41,3 @@ cargo run --release --bin cat_flag
 
 ## Gen image
 cargo run --release --bin gen_image 0 100000 0 100000
-gimp output_image.png &
